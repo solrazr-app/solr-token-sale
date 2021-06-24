@@ -730,10 +730,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "solr-token-swap"
+name = "solr-token-sale"
 version = "1.0.0"
 dependencies = [
  "arrayref",
+ "num-derive",
+ "num-traits",
  "solana-program",
  "solr-token-whitelist",
  "spl-token",
