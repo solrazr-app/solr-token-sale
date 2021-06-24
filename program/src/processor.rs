@@ -1,10 +1,12 @@
+use num_traits::FromPrimitive;
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
     msg,
     instruction::{AccountMeta, Instruction},
     program::{invoke, invoke_signed},
-    program_error::ProgramError,
+    decode_error::DecodeError,
+    program_error::{PrintProgramError, ProgramError},
     program_pack::{IsInitialized, Pack},
     pubkey::Pubkey,
     sysvar::{rent::Rent, clock::Clock, Sysvar},
@@ -367,5 +369,27 @@ impl Processor {
         )?;
 
         Ok(())
+    }
+}
+
+impl PrintProgramError for TokenSaleError {
+    fn print<E>(&self)
+    where
+        E: 'static + std::error::Error + DecodeError<E> + PrintProgramError + FromPrimitive,
+    {
+        match self {
+            TokenSaleError::InvalidInstruction => msg!("Error: Invalid Instruction"),
+            TokenSaleError::NotRentExempt => msg!("Error: Not Rent Exempt"),
+            TokenSaleError::UserNotWhitelisted => msg!("Error: User Not Whitelisted"),
+            TokenSaleError::TokenSaleNotInit => msg!("Error: Token Sale Not Initialized"),
+            TokenSaleError::TokenSaleNotStarted => msg!("Error: Token Sale Not Started"),
+            TokenSaleError::TokenSaleFunded => msg!("Error: Token Sale Funded"),
+            TokenSaleError::TokenSaleAmountExceeds => msg!("Error: Token Sale Amount Exceeds"),
+            TokenSaleError::TokenSaleEnded => msg!("Error: Token Sale Ended"),
+            TokenSaleError::AmountMinimum => msg!("Error: Amount Less Than Minimum"),
+            TokenSaleError::AmountMaximum => msg!("Error: Amount More Than Maximum"),
+            TokenSaleError::AmountExceeds => msg!("Error: Amount Exceeds Tokens Available For Sale"),
+            TokenSaleError::ExceedsAllocation => msg!("Error: Amount Exceeds Your Allocation"),
+        }
     }
 }

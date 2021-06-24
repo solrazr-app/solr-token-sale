@@ -1,8 +1,8 @@
+use num_derive::FromPrimitive;
 use thiserror::Error;
+use solana_program::{decode_error::DecodeError, program_error::ProgramError};
 
-use solana_program::program_error::ProgramError;
-
-#[derive(Error, Debug, Copy, Clone)]
+#[derive(Error, Debug, Copy, Clone, FromPrimitive)]
 pub enum TokenSaleError {
     /// Invalid instruction
     #[error("Invalid Instruction")]
@@ -45,5 +45,11 @@ pub enum TokenSaleError {
 impl From<TokenSaleError> for ProgramError {
     fn from(e: TokenSaleError) -> Self {
         ProgramError::Custom(e as u32)
+    }
+}
+
+impl<T> DecodeError<T> for TokenSaleError {
+    fn type_of() -> &'static str {
+        "Token Sale Error"
     }
 }
