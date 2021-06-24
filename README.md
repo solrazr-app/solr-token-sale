@@ -23,7 +23,7 @@ $ cargo build-bpf
 ```
 Deploy the program to localnet using the command displayed when you run the build above. Note down the public-key of the program once deployed (this is the solrazr-token-sale program id) and do the following.
 
-Update `TOKEN_PROGRAM_ID` inside `js/client/pubkeys.js` with the public-key generated above
+Update `TOKEN_SALE_PROGRAM_ID` inside `js/client/pubkeys.js` with the public-key generated above
 
 ## Build And Deploy Token Whitelist Program
 
