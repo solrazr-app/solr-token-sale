@@ -1,9 +1,9 @@
 [package]
-name = "solr-token-swap"
+name = "solr-token-sale"
 version = "1.0.0"
 edition = "2018"
 description = "SolRazr Token Swap Program"
-repository = "https://github.com/solrazr-app/solr-token-swap"
+repository = "https://github.com/solrazr-app/solr-token-sale"
 
 [features]
 no-entrypoint = []
