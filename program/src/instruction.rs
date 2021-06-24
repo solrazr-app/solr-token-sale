@@ -5,7 +5,10 @@ use crate::error::TokenSaleError::InvalidInstruction;
 
 pub enum TokenSaleInstruction {
 
-    /// Accounts expected: InitTokenSale
+    /// Instruction to initialise token sale with info and transfer
+    /// token sale account ownership to program derived address
+    ///
+    /// Accounts expected by InitTokenSale
     ///
     /// 0. `[signer]` The account initialising the sale
     /// 1. `[writable]` Account holding token sale init info
@@ -23,7 +26,9 @@ pub enum TokenSaleInstruction {
         token_sale_time: u64, // time when token sale goes live
     },
 
-    /// Accounts expected: FundTokenSale
+    /// Instruction to fund token sale account with tokens
+    ///
+    /// Accounts expected by FundTokenSale
     ///
     /// 0. `[signer]` The account funding the sale
     /// 1. `[]` Account holding token sale init info
@@ -34,7 +39,10 @@ pub enum TokenSaleInstruction {
         token_sale_amount: u64, // amount of tokens deposited into token sale account
     },
 
-    /// Accounts expected: ExecuteTokenSale
+    /// Instruction to execute token sale. User purchases tokens from token sale
+    /// account and transfer USDT to the pool account. It is done via atomic swap.
+    ///
+    /// Accounts expected by ExecuteTokenSale
     ///
     /// 0. `[signer]` The account buying from the sale
     /// 1. `[]` Account holding sale init info

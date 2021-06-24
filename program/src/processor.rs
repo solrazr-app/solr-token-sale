@@ -60,6 +60,7 @@ impl Processor {
         }
     }
 
+    /// Processes [InitTokenSale](enum.TokenSaleInstruction.html) instruction
     fn process_init_sale(
         accounts: &[AccountInfo],
         token_sale_amount: u64,
@@ -97,6 +98,7 @@ impl Processor {
             return Err(ProgramError::AccountAlreadyInitialized);
         }
 
+        /// Transfer token sale solr account ownership to the token sale program derived address
         let (token_sale_program_address, _nonce) = Pubkey::find_program_address(&[b"solrsale"], program_id);
         msg!("Transfer token sale solr account ownership to the token sale program derived address");
         let transfer_ownership_ix = spl_token::instruction::set_authority(
@@ -133,6 +135,7 @@ impl Processor {
         Ok(())
     }
 
+    /// Processes [FundTokenSale](enum.TokenSaleInstruction.html) instruction
     fn process_fund_sale(
         accounts: &[AccountInfo],
         token_sale_amount: u64,
@@ -172,6 +175,7 @@ impl Processor {
             return Err(TokenSaleError::TokenSaleFunded.into());
         }
 
+        /// Fund the token sale account with SOLR
         msg!("Fund the token sale account with SOLR");
         let transfer_solr_to_sale_ix = spl_token::instruction::transfer(
             token_program.key,
@@ -194,6 +198,7 @@ impl Processor {
         Ok(())
     }
 
+    /// Processes [ExecuteTokenSale](enum.TokenSaleInstruction.html) instruction
     fn process_execute_sale(
         accounts: &[AccountInfo],
         usd_amount: u64,
@@ -296,6 +301,7 @@ impl Processor {
             return Err(TokenSaleError::AmountExceeds.into());
         }
 
+        /// Transfer USDT to the pool account
         msg!("Transfer USDT to the pool account");
         let transfer_usdt_to_pool_ix = spl_token::instruction::transfer(
             token_program.key,
@@ -315,6 +321,7 @@ impl Processor {
             ],
         )?;
 
+        /// Transfer SOLR to the user
         msg!("Transfer SOLR to the user");
         let (token_sale_program_address, _nonce) = Pubkey::find_program_address(&[b"solrsale"], program_id);
         let transfer_solr_to_user_ix = spl_token::instruction::transfer(
@@ -337,7 +344,8 @@ impl Processor {
             &[&[&b"solrsale"[..], &[_nonce]]],
         )?;
 
-        // update token whitelist data after successful purchase
+        /// Update token whitelist data after successful purchase
+        /// Purchase is allowed only once and allocation will be reset to zero
         let mut accounts_to_send = Vec::with_capacity(3);
         accounts_to_send.push(AccountMeta::new_readonly(*user_account.key, true));
         accounts_to_send.push(AccountMeta::new(*token_whitelist_account.key, false));
