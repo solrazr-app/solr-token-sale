@@ -1,8 +1,10 @@
 use solana_program::program_error::ProgramError;
 use std::convert::TryInto;
+use std::mem::size_of;
 
 use crate::error::TokenSaleError::InvalidInstruction;
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum TokenSaleInstruction {
 
     /// Instruction to initialise token sale with info and transfer
@@ -131,5 +133,90 @@ impl TokenSaleInstruction {
             },
             _ => return Err(InvalidInstruction.into()),
         })
+    }
+
+    /// Packs a [TokenSaleInstruction](enum.TokenSaleInstruction.html) into a byte buffer.
+    pub fn pack(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(size_of::<Self>());
+        match self {
+            &Self::InitTokenSale {
+                token_sale_amount,
+                usd_min_amount,
+                usd_max_amount,
+                token_sale_price,
+                token_sale_time,
+            } => {
+                buf.push(0);
+                buf.extend_from_slice(&token_sale_amount.to_le_bytes());
+                buf.extend_from_slice(&usd_min_amount.to_le_bytes());
+                buf.extend_from_slice(&usd_max_amount.to_le_bytes());
+                buf.extend_from_slice(&token_sale_price.to_le_bytes());
+                buf.extend_from_slice(&token_sale_time.to_le_bytes());
+            }
+            &Self::FundTokenSale { token_sale_amount } => {
+                buf.push(1);
+                buf.extend_from_slice(&token_sale_amount.to_le_bytes());
+            }
+            &Self::ExecuteTokenSale { usd_amount } => {
+                buf.push(2);
+                buf.extend_from_slice(&usd_amount.to_le_bytes());
+            }
+        };
+        buf
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pack_init_token_sale() {
+        let sale_amount: u64 = 1000;
+        let min_amount: u64 = 100;
+        let max_amount: u64 = 500;
+        let price: u64 = 10;
+        let timestamp: u64 = 123456789;
+        let check = TokenSaleInstruction::InitTokenSale {
+            token_sale_amount: sale_amount,
+            usd_min_amount: min_amount,
+            usd_max_amount: max_amount,
+            token_sale_price: price,
+            token_sale_time: timestamp,
+        };
+        let packed = check.pack();
+        let mut expect = vec![0];
+        expect.extend_from_slice(&sale_amount.to_le_bytes());
+        expect.extend_from_slice(&min_amount.to_le_bytes());
+        expect.extend_from_slice(&max_amount.to_le_bytes());
+        expect.extend_from_slice(&price.to_le_bytes());
+        expect.extend_from_slice(&timestamp.to_le_bytes());
+        assert_eq!(packed, expect);
+        let unpacked = TokenSaleInstruction::unpack(&expect).unwrap();
+        assert_eq!(unpacked, check);
+    }
+
+    #[test]
+    fn test_pack_fund_token_sale() {
+        let amount: u64 = 1000;
+        let check = TokenSaleInstruction::FundTokenSale { token_sale_amount: amount };
+        let packed = check.pack();
+        let mut expect = vec![1];
+        expect.extend_from_slice(&amount.to_le_bytes());
+        assert_eq!(packed, expect);
+        let unpacked = TokenSaleInstruction::unpack(&expect).unwrap();
+        assert_eq!(unpacked, check);
+    }
+
+    #[test]
+    fn test_pack_execute_token_sale() {
+        let amount: u64 = 100;
+        let check = TokenSaleInstruction::ExecuteTokenSale { usd_amount: amount };
+        let packed = check.pack();
+        let mut expect = vec![2];
+        expect.extend_from_slice(&amount.to_le_bytes());
+        assert_eq!(packed, expect);
+        let unpacked = TokenSaleInstruction::unpack(&expect).unwrap();
+        assert_eq!(unpacked, check);
     }
 }
