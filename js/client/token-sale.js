@@ -22,6 +22,12 @@ import {
 import * as Layout from './layout';
 import {sendAndConfirmTransaction} from './util/send-and-confirm-transaction';
 import {findAssociatedTokenAddress} from './util/create-associated-account';
+import {
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
+  TOKEN_SALE_PROGRAM_ID,
+  TOKEN_WHITELIST_PROGRAM_ID,
+} from './pubkeys';
 
 /**
  * Some amount of tokens
@@ -88,9 +94,9 @@ export class TokenSale {
   tokenSaleAccount: Account;
 
   /**
-   * Token Whitelist Account Publickey
+   * Token Whitelist Map Publickey
    */
-  tokenWhitelistAccount: PublicKey;
+  tokenWhitelistMap: PublicKey;
 
   /**
    * Program Identifier for the Token Sale program
@@ -120,7 +126,7 @@ export class TokenSale {
    * @param mintUSDTPubkey USDT mint
    * @param mintSOLRPubkey SOLR mint
    * @param tokenSaleAccount Account to store token sale info
-   * @param tokenWhitelistAccount Publickey of the account storing token whitelist info
+   * @param tokenWhitelistMap Publickey of the account storing token whitelist map
    * @param tokenSaleProgramId The program ID of the token-sale program
    * @param tokenWhitelistProgramId The program ID of the token-sale program
    * @param tokenProgramId The program ID of the token program
@@ -132,7 +138,7 @@ export class TokenSale {
     mintUSDTPubkey: PublicKey,
     mintSOLRPubkey: PublicKey,
     tokenSaleAccount: Account,
-    tokenWhitelistAccount: PublicKey,
+    tokenWhitelistMap: PublicKey,
     tokenSaleProgramId: PublicKey,
     tokenWhitelistProgramId: PublicKey,
     tokenProgramId: PublicKey,
@@ -144,7 +150,7 @@ export class TokenSale {
       mintUSDTPubkey,
       mintSOLRPubkey,
       tokenSaleAccount,
-      tokenWhitelistAccount,
+      tokenWhitelistMap,
       tokenSaleProgramId,
       tokenWhitelistProgramId,
       tokenProgramId,
@@ -159,7 +165,7 @@ export class TokenSale {
    * @param payer Pays for the transaction
    * @param mintUSDTPubkey USDT mint
    * @param mintSOLRPubkey SOLR mint
-   * @param payer Pays for the transaction
+   * @param tokenWhitelistMap Publickey of the account storing token whitelist map
    * @param tokenSaleProgramId The program ID of the token-sale program
    * @param tokenWhitelistProgramId The program ID of the token-sale program
    * @param tokenProgramId The program ID of the token program
@@ -171,7 +177,7 @@ export class TokenSale {
     payer: Account,
     mintUSDTPubkey: PublicKey,
     mintSOLRPubkey: PublicKey,
-    tokenWhitelistAccount: PublicKey,
+    tokenWhitelistMap: PublicKey,
     tokenSaleProgramId: PublicKey,
     tokenWhitelistProgramId: PublicKey,
     tokenProgramId: PublicKey,
@@ -184,7 +190,7 @@ export class TokenSale {
       mintUSDTPubkey,
       mintSOLRPubkey,
       new Account(),
-      tokenWhitelistAccount,
+      tokenWhitelistMap,
       tokenSaleProgramId,
       tokenWhitelistProgramId,
       tokenProgramId,
@@ -261,7 +267,7 @@ export class TokenSale {
           saleTokenAccount,
           this.tokenProgramId,
           this.tokenWhitelistProgramId,
-          this.tokenWhitelistAccount,
+          this.tokenWhitelistMap,
         ),
       ),
       this.payer,
@@ -283,7 +289,7 @@ export class TokenSale {
     saleTokenAccount: PublicKey,
     tokenProgramId: PublicKey,
     tokenWhitelistProgramId: PublicKey,
-    tokenWhitelistAccount: PublicKey,
+    tokenWhitelistMap: PublicKey,
   ): TransactionInstruction {
     const dataLayout = BufferLayout.struct([
       BufferLayout.u8('instruction'),
@@ -312,7 +318,7 @@ export class TokenSale {
       {pubkey: tokenSaleAccount, isSigner: false, isWritable: true},
       {pubkey: poolDestination, isSigner: false, isWritable: false},
       {pubkey: saleTokenAccount, isSigner: false, isWritable: true},
-      {pubkey: tokenWhitelistAccount, isSigner: false, isWritable: false},
+      {pubkey: tokenWhitelistMap, isSigner: false, isWritable: false},
       {pubkey: tokenProgramId, isSigner: false, isWritable: false},
       {pubkey: tokenWhitelistProgramId, isSigner: false, isWritable: false},
       {pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false},
@@ -402,6 +408,7 @@ export class TokenSale {
    * @param userDestination User's destination token account
    * @param saleTokenAccount Pool's source token account
    * @param poolDestination Pool's destination token account
+   * @param tokenWhitelistAccount Account holding token whitelist info
    * @param amount Number of tokens to transfer from source account
    */
   async executeTokenSale(
@@ -410,6 +417,7 @@ export class TokenSale {
     userDestination: PublicKey,
     saleTokenAccount: PublicKey,
     poolDestination: PublicKey,
+    tokenWhitelistAccount: PublicKey,
     amount: number | Numberu64,
   ): Promise<TransactionSignature> {
 
@@ -432,7 +440,8 @@ export class TokenSale {
           this.tokenProgramId,
           saleProgramDerivedAddress[0],
           this.tokenWhitelistProgramId,
-          this.tokenWhitelistAccount,
+          this.tokenWhitelistMap,
+          tokenWhitelistAccount,
         ),
       ),
       userAccount,
@@ -451,6 +460,7 @@ export class TokenSale {
     tokenProgramId: PublicKey,
     salePDA: PublicKey,
     tokenWhitelistProgramId: PublicKey,
+    tokenWhitelistMap: PublicKey,
     tokenWhitelistAccount: PublicKey,
   ): TransactionInstruction {
     const dataLayout = BufferLayout.struct([
@@ -476,6 +486,7 @@ export class TokenSale {
       {pubkey: poolDestination, isSigner: false, isWritable: true},
       {pubkey: salePDA, isSigner: false, isWritable: false},
       {pubkey: tokenProgramId, isSigner: false, isWritable: false},
+      {pubkey: tokenWhitelistMap, isSigner: false, isWritable: true},
       {pubkey: tokenWhitelistAccount, isSigner: false, isWritable: true},
       {pubkey: tokenWhitelistProgramId, isSigner: false, isWritable: false},
     ];

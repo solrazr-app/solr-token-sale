@@ -178,6 +178,9 @@ export async function ExecuteTokenSale(): Promise<void> {
   console.log('>>>>> User SOLR Account: ', userTokenAccountSOLR.toString());
   console.log('>>>>> User SOLR Account Balance: ', (await mintSOLR.getAccountInfo(userTokenAccountSOLR)).amount.toNumber());
 
+  // This needs to be updated with the token whitelist account
+  const tokenWhitelistAccount = new PublicKey('XXXX'); // generated from token whitelist program
+
   console.log('Execute Sale');
   await tokenSale.executeTokenSale(
     ownerUser,
@@ -185,6 +188,7 @@ export async function ExecuteTokenSale(): Promise<void> {
     userTokenAccountSOLR,
     saleTokenAccountSOLR,
     poolTokenAccountUSDT,
+    tokenWhitelistAccount,
     PURCHASE_AMOUNT,
   );
 
