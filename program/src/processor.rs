@@ -83,7 +83,7 @@ impl Processor {
 
         let pool_usdt_account = next_account_info(account_info_iter)?;
         let token_sale_solr_account = next_account_info(account_info_iter)?;
-        let whitelist_account = next_account_info(account_info_iter)?;
+        let token_whitelist_map = next_account_info(account_info_iter)?;
 
         let token_program = next_account_info(account_info_iter)?;
         let token_whitelist_program = next_account_info(account_info_iter)?;
@@ -124,7 +124,7 @@ impl Processor {
         token_sale_state.init_pubkey = *pool_account.key;
         token_sale_state.sale_token_account_pubkey = *token_sale_solr_account.key;
         token_sale_state.pool_token_account_pubkey = *pool_usdt_account.key;
-        token_sale_state.whitelist_account_pubkey = *whitelist_account.key;
+        token_sale_state.whitelist_map_pubkey = *token_whitelist_map.key;
         token_sale_state.whitelist_program_pubkey = *token_whitelist_program.key;
         token_sale_state.token_sale_amount = token_sale_amount;
         token_sale_state.usd_min_amount = usd_min_amount;
@@ -224,25 +224,44 @@ impl Processor {
         let sale_pda = next_account_info(account_info_iter)?;
         let token_program = next_account_info(account_info_iter)?;
 
+        let token_whitelist_map = next_account_info(account_info_iter)?;
         let token_whitelist_account = next_account_info(account_info_iter)?;
         let token_whitelist_program = next_account_info(account_info_iter)?;
         
         let token_sale_state = TokenSale::unpack(&token_sale_account.data.borrow())?;
         let token_sale_solr_account_info = TokenAccount::unpack(&token_sale_solr_account.data.borrow())?;
-        let mut token_whitelist_state = TokenWhitelist::unpack_from_slice(&token_whitelist_account.data.borrow())?;
+        let mut token_whitelist_map_state = TokenWhitelist::unpack_from_slice(&token_whitelist_map.data.borrow())?;
+        let mut token_whitelist_account_state = TokenWhitelist::unpack_from_slice(&token_whitelist_account.data.borrow())?;
 
-        // check if sale is allowed
-        if !token_whitelist_state.contains_key(&user_account.key.to_string()) {
+        // check if token sale is allowed
+        if token_sale_state.whitelist_map_pubkey != *token_whitelist_map.key {
+            msg!("invalid token whitelist account map");
+            msg!(&token_sale_state.whitelist_map_pubkey.to_string());
+            msg!(&token_whitelist_map.key.to_string());
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if token_sale_state.whitelist_program_pubkey != *token_whitelist_program.key {
+            msg!("invalid token whitelist program");
+            msg!(&token_sale_state.whitelist_program_pubkey.to_string());
+            msg!(&token_whitelist_program.key.to_string());
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if !token_whitelist_map_state.contains_key(&token_whitelist_account.key.to_string()) {
+            msg!("invalid token whitelist account");
+            msg!("{}", token_whitelist_account.key);
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if !token_whitelist_account_state.contains_key(&user_account.key.to_string()) {
             msg!("SOLR_ERROR_2: user is not whitelisted");
             msg!("{}", user_account.key);
             return Err(TokenSaleError::UserNotWhitelisted.into());
         }
         let mut allocation_amount: u64 = 0;
-        if let Some(value) = token_whitelist_state.get(&user_account.key.to_string()) {
+        if let Some(value) = token_whitelist_account_state.get(&user_account.key.to_string()) {
             allocation_amount = (*value)*1000000;
         }
         if usd_amount > allocation_amount {
-            msg!("SOLR_ERROR_2: amount exceeds your remaining allocation");
+            msg!("SOLR_ERROR_11: amount exceeds your allocation");
             msg!("{}", usd_amount);
             msg!("{}", allocation_amount);
             return Err(TokenSaleError::ExceedsAllocation.into());
@@ -264,18 +283,6 @@ impl Processor {
             msg!("pool usdt account does not match");
             msg!(&token_sale_state.pool_token_account_pubkey.to_string());
             msg!(&pool_usdt_account.key.to_string());
-            return Err(ProgramError::InvalidAccountData);
-        }
-        if token_sale_state.whitelist_account_pubkey != *token_whitelist_account.key {
-            msg!("invalid token whitelist account");
-            msg!(&token_sale_state.whitelist_account_pubkey.to_string());
-            msg!(&token_whitelist_account.key.to_string());
-            return Err(ProgramError::InvalidAccountData);
-        }
-        if token_sale_state.whitelist_program_pubkey != *token_whitelist_program.key {
-            msg!("invalid token whitelist program");
-            msg!(&token_sale_state.whitelist_program_pubkey.to_string());
-            msg!(&token_whitelist_program.key.to_string());
             return Err(ProgramError::InvalidAccountData);
         }
         if token_sale_solr_account_info.amount <= 0 {

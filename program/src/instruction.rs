@@ -54,8 +54,9 @@ pub enum TokenSaleInstruction {
     /// 5. `[writable]` Pool token account for receiving user funds
     /// 6. `[]` The Sale program derived address
     /// 7. `[]` The token program
-    /// 8. `[writable]` Account holding token whitelist info
-    /// 9. `[]` The token whitelist program
+    /// 8. `[]` Account holding token whitelist map
+    /// 9. `[writable]` Account holding token whitelist info
+    /// 10. `[]` The token whitelist program
     ExecuteTokenSale {
         usd_amount: u64, // purchase amount in usd
     },
