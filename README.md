@@ -40,9 +40,11 @@ Update `TOKEN_WHITELIST_PROGRAM_ID` inside `js/client/pubkeys.js` with the publi
 
 In order to run token sale program, you will need token whitelist to be created. You will find instructions here https://github.com/solrazr-app/solr-token-whitelist
 
-Once token whitelist is setup, you need to update 'tokenWhitelistAccount' inside `js/client/pubkeys.js` with the public-key of the token whitelist account
-
 ## Running JS Client
+
+Before running the JS client, please ensure you completed the following steps
+1. Update `tokenWhitelistMap` inside `js/client/pubkeys.js` with the public-key of the token whitelist map obtained after setting up token whitelist
+2. In the function `ExecuteTokenSale` inside `js/cli/token-sale-test.js`, update `tokenWhitelistAccount` with the pubkey of the token whitelist account (this is different from the token whitlelist map)
 
 You can use the JS client to test the program
 ```bash
