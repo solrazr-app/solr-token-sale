@@ -21,4 +21,4 @@ export const TOKEN_WHITELIST_PROGRAM_ID: PublicKey = new PublicKey(
 );
 
 // this must be updated with pubkey generated after init token whitelist
-export const tokenWhitelistMap = new PublicKey('XXXX'); // change this to token-whitelist map account
+export const tokenWhitelistMap = new PublicKey('4dkW3qpDuu26eHPhouyHQhRBF5jSjZXYi69DbUWjUhmt'); // change this to token-whitelist map account

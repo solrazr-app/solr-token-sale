@@ -1,11 +1,11 @@
 {
-  "name": "@solana/solr-token-swap",
+  "name": "@solana/solr-token-sale",
   "version": "1.0.0",
   "description": "SolRazr Token Swap JavaScript API",
   "homepage": "https://solrazr.com/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/solrazr-app/solr-token-swap"
+    "url": "https://github.com/solrazr-app/solr-token-sale"
   },
   "main": "lib/index.cjs.js",
   "module": "lib/index.esm.js",

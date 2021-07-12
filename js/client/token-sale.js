@@ -64,6 +64,38 @@ export class Numberu64 extends BN {
   }
 }
 
+export const publicKey = (property = "publicKey") => {
+  return BufferLayout.blob(32, property);
+};
+
+export const TOKEN_SALE_ACCOUNT_DATA_LAYOUT = BufferLayout.struct([
+  BufferLayout.u8("isInitialized"),
+  publicKey("initPubkey"),
+  publicKey("saleTokenAccountPubkey"),
+  publicKey("poolTokenAccountPubkey"),
+  publicKey("whitelistMapPubkey"),
+  publicKey("whitelistProgramPubkey"),
+  Layout.uint64("tokenSaleAmount"),
+  Layout.uint64("minAmount"),
+  Layout.uint64("maxAmount"),
+  Layout.uint64("tokenSalePrice"),
+  Layout.uint64("tokenSaleTime"),
+]);
+
+export interface TokenSaleLayout {
+  isInitialized: number,
+  initPubkey: Uint8Array,
+  saleTokenAccountPubkey: Uint8Array,
+  poolTokenAccountPubkey: Uint8Array,
+  whitelistMapPubkey: Uint8Array,
+  whitelistProgramPubkey: Uint8Array,
+  tokenSaleAmount: Uint8Array,
+  minAmount: Uint8Array,
+  maxAmount: Uint8Array,
+  tokenSalePrice: Uint8Array,
+  tokenSaleTime: Uint8Array,
+}
+
 /**
  * A program to exchange tokens against a pool of liquidity
  */
@@ -223,25 +255,9 @@ export class TokenSale {
     timestamp: number | Numberu64,
   ): Promise<TransactionSignature> {
 
-    const publicKey = (property = "publicKey") => {
-      return BufferLayout.blob(32, property);
-    };
-    const tokenSaleAccountDataLayout = BufferLayout.struct([
-      BufferLayout.u8("isInitialized"),
-      publicKey("initPubkey"),
-      publicKey("saleTokenAccountPubkey"),
-      publicKey("poolTokenAccountPubkey"),
-      publicKey("whitelistAccountPubkey"),
-      publicKey("whitelistProgramPubkey"),
-      Layout.uint64("tokenSaleAmount"),
-      Layout.uint64("minAmount"),
-      Layout.uint64("maxAmount"),
-      Layout.uint64("tokenSalePrice"),
-      Layout.uint64("tokenSaleTime"),
-    ]);
     const createSaleAccountInstruction = SystemProgram.createAccount({
-        space: tokenSaleAccountDataLayout.span,
-        lamports: await this.connection.getMinimumBalanceForRentExemption(tokenSaleAccountDataLayout.span, 'singleGossip'),
+        space: TOKEN_SALE_ACCOUNT_DATA_LAYOUT.span,
+        lamports: await this.connection.getMinimumBalanceForRentExemption(TOKEN_SALE_ACCOUNT_DATA_LAYOUT.span, 'singleGossip'),
         fromPubkey: poolTransferAuthority.publicKey,
         newAccountPubkey: this.tokenSaleAccount.publicKey,
         programId: this.tokenSaleProgramId,
@@ -300,14 +316,18 @@ export class TokenSale {
       Layout.uint64('token_sale_time'),
     ]);
 
-    const data = Buffer.alloc(dataLayout.span);
+    // price is converted for easy arithmetic inside token sale program
+    // number of tokens to distribute = purchase amount * inverse_price
+    let inverse_price = 1/price;
+
+    const data = Buffer.alloc(dataLayout.span); 
     dataLayout.encode(
       {
         instruction: 0, // Init Sale instruction
         token_sale_amount: new Numberu64(amount).toBuffer(),
         usd_min_amount: new Numberu64(minAmount).toBuffer(),
         usd_max_amount: new Numberu64(maxAmount).toBuffer(),
-        token_sale_price: new Numberu64(price*100).toBuffer(), // price is multipled by 100 for easy arithmetic inside token sale program
+        token_sale_price: new Numberu64(inverse_price).toBuffer(), 
         token_sale_time: new Numberu64(timestamp).toBuffer(),
       },
       data,

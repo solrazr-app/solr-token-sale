@@ -13,7 +13,7 @@ import {
 import {sleep} from '../client/util/sleep';
 
 async function main() {
-  These test cases are designed to run sequentially and in the following order
+  // These test cases are designed to run sequentially and in the following order
   console.log('Run test: InitTokenSale');
   await InitTokenSale();
   console.log('Run test: FundTokenSale');
