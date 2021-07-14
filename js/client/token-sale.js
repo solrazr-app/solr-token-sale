@@ -64,17 +64,13 @@ export class Numberu64 extends BN {
   }
 }
 
-export const publicKey = (property = "publicKey") => {
-  return BufferLayout.blob(32, property);
-};
-
 export const TOKEN_SALE_ACCOUNT_DATA_LAYOUT = BufferLayout.struct([
   BufferLayout.u8("isInitialized"),
-  publicKey("initPubkey"),
-  publicKey("saleTokenAccountPubkey"),
-  publicKey("poolTokenAccountPubkey"),
-  publicKey("whitelistMapPubkey"),
-  publicKey("whitelistProgramPubkey"),
+  Layout.publicKey("initPubkey"),
+  Layout.publicKey("saleTokenAccountPubkey"),
+  Layout.publicKey("poolTokenAccountPubkey"),
+  Layout.publicKey("whitelistMapPubkey"),
+  Layout.publicKey("whitelistProgramPubkey"),
   Layout.uint64("tokenSaleAmount"),
   Layout.uint64("minAmount"),
   Layout.uint64("maxAmount"),

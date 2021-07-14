@@ -227,9 +227,4 @@ export async function ExecuteTokenSale(): Promise<void> {
   assert(userSOLRBalance == (PURCHASE_AMOUNT/SALE_PRICE);
   let poolSOLRBalance = (await mintSOLR.getAccountInfo(saleTokenAccountSOLR)).amount.toNumber();
   assert(poolSOLRBalance == (mintAmountUSDT - (PURCHASE_AMOUNT/SALE_PRICE)));
-
-  console.log('>>>>> User USDT Account Balance: ', (await mintUSDT.getAccountInfo(userTokenAccountUSDT)).amount.toNumber());
-  console.log('>>>>> Pool USDT Account Balance: ', (await mintUSDT.getAccountInfo(poolTokenAccountUSDT)).amount.toNumber());
-  console.log('>>>>> User SOLR Account Balance: ', (await mintSOLR.getAccountInfo(userTokenAccountSOLR)).amount.toNumber());
-  console.log('>>>>> Sale SOLR Account Balance: ', (await mintSOLR.getAccountInfo(saleTokenAccountSOLR)).amount.toNumber());
 }
