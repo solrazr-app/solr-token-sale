@@ -258,7 +258,7 @@ impl Processor {
         }
         let mut allocation_amount: u64 = 0;
         if let Some(value) = token_whitelist_account_state.get(&user_account.key.to_string()) {
-            allocation_amount = (*value)*1000000;
+            allocation_amount = *value;
         }
         if usd_amount > allocation_amount {
             msg!("SOLR_ERROR_11: amount exceeds your allocation");
