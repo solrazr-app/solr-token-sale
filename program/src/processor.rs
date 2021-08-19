@@ -137,6 +137,7 @@ impl Processor {
         Ok(())
     }
 
+    /// This instruction is redundant. Use spl token transfer to fund the sale
     /// Processes [FundTokenSale](enum.TokenSaleInstruction.html) instruction
     fn process_fund_sale(
         accounts: &[AccountInfo],
@@ -156,6 +157,11 @@ impl Processor {
         let token_sale_solr_account = next_account_info(account_info_iter)?;
 
         let token_program = next_account_info(account_info_iter)?;
+        if !spl_token::check_id(token_program.key) {
+            msg!("invalid token program");
+            msg!(&token_program.key.to_string());
+            return Err(ProgramError::InvalidAccountData);
+        }
 
         // check if token sale can be funded
         let token_sale_state = TokenSale::unpack(&token_sale_account.data.borrow())?;
@@ -234,6 +240,11 @@ impl Processor {
         let mut token_whitelist_account_state = TokenWhitelist::unpack_from_slice(&token_whitelist_account.data.borrow())?;
 
         // check if token sale is allowed
+        if !spl_token::check_id(token_program.key) {
+            msg!("invalid token program");
+            msg!(&token_program.key.to_string());
+            return Err(ProgramError::InvalidAccountData);
+        }
         if token_sale_state.whitelist_map_pubkey != *token_whitelist_map.key {
             msg!("invalid token whitelist account map");
             msg!(&token_sale_state.whitelist_map_pubkey.to_string());
