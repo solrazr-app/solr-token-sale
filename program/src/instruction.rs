@@ -139,8 +139,8 @@ impl TokenSaleInstruction {
     /// Packs a [TokenSaleInstruction](enum.TokenSaleInstruction.html) into a byte buffer.
     pub fn pack(&self) -> Vec<u8> {
         let mut buf = Vec::with_capacity(size_of::<Self>());
-        match self {
-            &Self::InitTokenSale {
+        match *self {
+            Self::InitTokenSale {
                 token_sale_amount,
                 usd_min_amount,
                 usd_max_amount,
@@ -154,11 +154,11 @@ impl TokenSaleInstruction {
                 buf.extend_from_slice(&token_sale_price.to_le_bytes());
                 buf.extend_from_slice(&token_sale_time.to_le_bytes());
             }
-            &Self::FundTokenSale { token_sale_amount } => {
+            Self::FundTokenSale { token_sale_amount } => {
                 buf.push(1);
                 buf.extend_from_slice(&token_sale_amount.to_le_bytes());
             }
-            &Self::ExecuteTokenSale { usd_amount } => {
+            Self::ExecuteTokenSale { usd_amount } => {
                 buf.push(2);
                 buf.extend_from_slice(&usd_amount.to_le_bytes());
             }

@@ -296,7 +296,7 @@ impl Processor {
             msg!(&pool_usdt_account.key.to_string());
             return Err(ProgramError::InvalidAccountData);
         }
-        if token_sale_solr_account_info.amount <= 0 {
+        if token_sale_solr_account_info.amount == 0 {
             msg!("SOLR_ERROR_7: token sale has ended");
             msg!(&token_sale_solr_account_info.amount.to_string());
             return Err(TokenSaleError::TokenSaleEnded.into());
@@ -366,12 +366,12 @@ impl Processor {
 
         // Update token whitelist data after successful purchase
         // Purchase is allowed only once and allocation will be reset to zero
-        let mut accounts_to_send = Vec::with_capacity(3);
-        accounts_to_send.push(AccountMeta::new_readonly(*user_account.key, true));
-        accounts_to_send.push(AccountMeta::new(*token_whitelist_account.key, false));
-        accounts_to_send.push(AccountMeta::new_readonly(*user_account.key, false));
-        let mut data: Vec<u8> = Vec::new();
-        data.push(3); // instruction to reset allocation to zero
+        let accounts_to_send = vec![
+            AccountMeta::new_readonly(*user_account.key, true),
+            AccountMeta::new(*token_whitelist_account.key, false),
+            AccountMeta::new_readonly(*user_account.key, false),
+        ];
+        let data: Vec<u8> = vec![3]; // instruction to reset allocation to zero
         let update_token_whitelist_ix = Instruction {
             program_id: *token_whitelist_program.key,
             accounts: accounts_to_send,
