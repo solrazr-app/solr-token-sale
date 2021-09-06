@@ -59,6 +59,27 @@ impl Processor {
                     program_id
                 )
             }
+            TokenSaleInstruction::PauseTokenSale {} => {
+                msg!("Instruction: PauseTokenSale");
+                Self::process_pause_sale(
+                    accounts,
+                    program_id
+                )
+            }
+            TokenSaleInstruction::ResumeTokenSale {} => {
+                msg!("Instruction: ResumeTokenSale");
+                Self::process_resume_sale(
+                    accounts,
+                    program_id
+                )
+            }
+            TokenSaleInstruction::EndTokenSale {} => {
+                msg!("Instruction: EndTokenSale");
+                Self::process_end_sale(
+                    accounts,
+                    program_id
+                )
+            }
         }
     }
 
@@ -86,7 +107,17 @@ impl Processor {
         let token_whitelist_map = next_account_info(account_info_iter)?;
 
         let token_program = next_account_info(account_info_iter)?;
+        if !spl_token::check_id(token_program.key) {
+            msg!("invalid token program");
+            msg!(&token_program.key.to_string());
+            return Err(ProgramError::InvalidAccountData);
+        }
+
         let token_whitelist_program = next_account_info(account_info_iter)?;
+        if token_whitelist_map.owner != token_whitelist_program.key {
+            msg!("token whitelist map is not owned by token whitelist program");
+            return Err(ProgramError::InvalidAccountData);
+        }
 
         let sysvar_rent_pubkey = &Rent::from_account_info(next_account_info(account_info_iter)?)?;
         if !sysvar_rent_pubkey.is_exempt(token_sale_account.lamports(), token_sale_account.data_len()) {
@@ -131,6 +162,8 @@ impl Processor {
         token_sale_state.usd_max_amount = usd_max_amount;
         token_sale_state.token_sale_price = token_sale_price;
         token_sale_state.token_sale_time = token_sale_time;
+        token_sale_state.token_sale_paused = false;
+        token_sale_state.token_sale_ended = false;
         
         TokenSale::pack(token_sale_state, &mut token_sale_account.data.borrow_mut())?;
 
@@ -284,6 +317,14 @@ impl Processor {
             msg!("{}", token_sale_state.token_sale_time);
             return Err(TokenSaleError::TokenSaleNotStarted.into());
         }
+        if token_sale_state.token_sale_paused {
+            msg!("SOLR_ERROR_12: token sale has been paused");
+            return Err(TokenSaleError::TokenSalePaused.into());
+        }
+        if token_sale_state.token_sale_ended {
+            msg!("SOLR_ERROR_13: token sale has ended");
+            return Err(TokenSaleError::TokenSaleEnded.into());
+        }
         if token_sale_state.sale_token_account_pubkey != *token_sale_solr_account.key {
             msg!("token sale account does not match");
             msg!(&token_sale_state.sale_token_account_pubkey.to_string());
@@ -297,9 +338,9 @@ impl Processor {
             return Err(ProgramError::InvalidAccountData);
         }
         if token_sale_solr_account_info.amount == 0 {
-            msg!("SOLR_ERROR_7: token sale has ended");
+            msg!("SOLR_ERROR_7: token sale complete");
             msg!(&token_sale_solr_account_info.amount.to_string());
-            return Err(TokenSaleError::TokenSaleEnded.into());
+            return Err(TokenSaleError::TokenSaleComplete.into());
         }
         if usd_amount < token_sale_state.usd_min_amount {
             msg!("SOLR_ERROR_8: amount less than minimum allocation");
@@ -388,6 +429,111 @@ impl Processor {
 
         Ok(())
     }
+
+    /// Processes [PauseTokenSale](enum.TokenSaleInstruction.html) instruction
+    fn process_pause_sale(
+        accounts: &[AccountInfo],
+        _program_id: &Pubkey,
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+
+        let init_account = next_account_info(account_info_iter)?;
+        if !init_account.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let token_sale_account = next_account_info(account_info_iter)?;
+
+        // check if token sale can be paused
+        let mut token_sale_state = TokenSale::unpack(&token_sale_account.data.borrow())?;
+        if token_sale_state.init_pubkey != *init_account.key {
+            msg!("invalid signer");
+            msg!(&token_sale_state.init_pubkey.to_string());
+            msg!(&init_account.key.to_string());
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if !token_sale_state.is_initialized() {
+            msg!("SOLR_ERROR_3: token sale needs to be initialized before pausing");
+            return Err(TokenSaleError::TokenSaleNotInit.into());
+        }
+        
+        // pause the sale
+        token_sale_state.token_sale_paused = true;
+        
+        TokenSale::pack(token_sale_state, &mut token_sale_account.data.borrow_mut())?;
+
+        Ok(())
+    }
+
+    /// Processes [ResumeTokenSale](enum.TokenSaleInstruction.html) instruction
+    fn process_resume_sale(
+        accounts: &[AccountInfo],
+        _program_id: &Pubkey,
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+
+        let init_account = next_account_info(account_info_iter)?;
+        if !init_account.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let token_sale_account = next_account_info(account_info_iter)?;
+
+        // check if token sale can be resumed
+        let mut token_sale_state = TokenSale::unpack(&token_sale_account.data.borrow())?;
+        if token_sale_state.init_pubkey != *init_account.key {
+            msg!("invalid signer");
+            msg!(&token_sale_state.init_pubkey.to_string());
+            msg!(&init_account.key.to_string());
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if !token_sale_state.is_initialized() {
+            msg!("SOLR_ERROR_3: token sale is not initialized");
+            return Err(TokenSaleError::TokenSaleNotInit.into());
+        }
+        
+        // resume the sale
+        token_sale_state.token_sale_paused = false;
+        
+        TokenSale::pack(token_sale_state, &mut token_sale_account.data.borrow_mut())?;
+
+        Ok(())
+    }
+
+    /// Processes [EndTokenSale](enum.TokenSaleInstruction.html) instruction
+    fn process_end_sale(
+        accounts: &[AccountInfo],
+        _program_id: &Pubkey,
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+
+        let init_account = next_account_info(account_info_iter)?;
+        if !init_account.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let token_sale_account = next_account_info(account_info_iter)?;
+
+        // check if token sale can be ended
+        let mut token_sale_state = TokenSale::unpack(&token_sale_account.data.borrow())?;
+        if token_sale_state.init_pubkey != *init_account.key {
+            msg!("invalid signer");
+            msg!(&token_sale_state.init_pubkey.to_string());
+            msg!(&init_account.key.to_string());
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if !token_sale_state.is_initialized() {
+            msg!("SOLR_ERROR_3: token sale is not initialized");
+            return Err(TokenSaleError::TokenSaleNotInit.into());
+        }
+        
+        // end the sale (can't be resumed once ended)
+        token_sale_state.token_sale_ended = true;
+        
+        TokenSale::pack(token_sale_state, &mut token_sale_account.data.borrow_mut())?;
+
+        Ok(())
+    }
 }
 
 impl PrintProgramError for TokenSaleError {
@@ -403,11 +549,13 @@ impl PrintProgramError for TokenSaleError {
             TokenSaleError::TokenSaleNotStarted => msg!("Error: Token Sale Not Started"),
             TokenSaleError::TokenSaleFunded => msg!("Error: Token Sale Funded"),
             TokenSaleError::TokenSaleAmountExceeds => msg!("Error: Token Sale Amount Exceeds"),
-            TokenSaleError::TokenSaleEnded => msg!("Error: Token Sale Ended"),
+            TokenSaleError::TokenSaleComplete => msg!("Error: Token Sale Complete"),
             TokenSaleError::AmountMinimum => msg!("Error: Amount Less Than Minimum"),
             TokenSaleError::AmountMaximum => msg!("Error: Amount More Than Maximum"),
             TokenSaleError::AmountExceeds => msg!("Error: Amount Exceeds Tokens Available For Sale"),
             TokenSaleError::ExceedsAllocation => msg!("Error: Amount Exceeds Your Allocation"),
+            TokenSaleError::TokenSalePaused => msg!("Error: Token Sale Paused"),
+            TokenSaleError::TokenSaleEnded => msg!("Error: Token Sale Ended"),
         }
     }
 }

@@ -76,6 +76,8 @@ export const TOKEN_SALE_ACCOUNT_DATA_LAYOUT = BufferLayout.struct([
   Layout.uint64("maxAmount"),
   Layout.uint64("tokenSalePrice"),
   Layout.uint64("tokenSaleTime"),
+  BufferLayout.u8("tokenSalePaused"),
+  BufferLayout.u8("tokenSaleEnded"),
 ]);
 
 export interface TokenSaleLayout {
@@ -90,6 +92,8 @@ export interface TokenSaleLayout {
   maxAmount: Uint8Array,
   tokenSalePrice: Uint8Array,
   tokenSaleTime: Uint8Array,
+  tokenSalePaused: number,
+  tokenSaleEnded: number,
 }
 
 /**

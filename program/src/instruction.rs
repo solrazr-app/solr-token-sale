@@ -60,6 +60,33 @@ pub enum TokenSaleInstruction {
     ExecuteTokenSale {
         usd_amount: u64, // purchase amount in usd
     },
+
+    /// Instruction to pause token sale
+    ///
+    /// Accounts expected by PauseTokenSale
+    ///
+    /// 0. `[signer]` The account which owns token sale init
+    /// 1. `[writable]` Account holding token sale init info
+    PauseTokenSale {
+    },
+
+    /// Instruction to resume token sale
+    ///
+    /// Accounts expected by ResumeTokenSale
+    ///
+    /// 0. `[signer]` The account which owns token sale init
+    /// 1. `[writable]` Account holding token sale init info
+    ResumeTokenSale {
+    },
+
+    /// Instruction to end token sale
+    ///
+    /// Accounts expected by EndTokenSale
+    ///
+    /// 0. `[signer]` The account which owns token sale init
+    /// 1. `[writable]` Account holding token sale init info
+    EndTokenSale {
+    },
 }
 
 impl TokenSaleInstruction {
@@ -132,6 +159,15 @@ impl TokenSaleInstruction {
 
                 Self::ExecuteTokenSale {usd_amount}
             },
+            3 => {
+                Self::PauseTokenSale {}
+            },
+            4 => {
+                Self::ResumeTokenSale {}
+            },
+            5 => {
+                Self::EndTokenSale {}
+            },
             _ => return Err(InvalidInstruction.into()),
         })
     }
@@ -161,6 +197,15 @@ impl TokenSaleInstruction {
             Self::ExecuteTokenSale { usd_amount } => {
                 buf.push(2);
                 buf.extend_from_slice(&usd_amount.to_le_bytes());
+            }
+            Self::PauseTokenSale {} => {
+                buf.push(3);
+            }
+            Self::ResumeTokenSale {} => {
+                buf.push(4);
+            }
+            Self::EndTokenSale {} => {
+                buf.push(5);
             }
         };
         buf
