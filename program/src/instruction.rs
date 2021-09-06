@@ -60,6 +60,33 @@ pub enum TokenSaleInstruction {
     ExecuteTokenSale {
         usd_amount: u64, // purchase amount in usd
     },
+
+    /// Instruction to pause token sale
+    ///
+    /// Accounts expected by PauseTokenSale
+    ///
+    /// 0. `[signer]` The account which owns token sale init
+    /// 1. `[writable]` Account holding token sale init info
+    PauseTokenSale {
+    },
+
+    /// Instruction to resume token sale
+    ///
+    /// Accounts expected by ResumeTokenSale
+    ///
+    /// 0. `[signer]` The account which owns token sale init
+    /// 1. `[writable]` Account holding token sale init info
+    ResumeTokenSale {
+    },
+
+    /// Instruction to end token sale
+    ///
+    /// Accounts expected by EndTokenSale
+    ///
+    /// 0. `[signer]` The account which owns token sale init
+    /// 1. `[writable]` Account holding token sale init info
+    EndTokenSale {
+    },
 }
 
 impl TokenSaleInstruction {
@@ -132,6 +159,15 @@ impl TokenSaleInstruction {
 
                 Self::ExecuteTokenSale {usd_amount}
             },
+            3 => {
+                Self::PauseTokenSale {}
+            },
+            4 => {
+                Self::ResumeTokenSale {}
+            },
+            5 => {
+                Self::EndTokenSale {}
+            },
             _ => return Err(InvalidInstruction.into()),
         })
     }
@@ -139,8 +175,8 @@ impl TokenSaleInstruction {
     /// Packs a [TokenSaleInstruction](enum.TokenSaleInstruction.html) into a byte buffer.
     pub fn pack(&self) -> Vec<u8> {
         let mut buf = Vec::with_capacity(size_of::<Self>());
-        match self {
-            &Self::InitTokenSale {
+        match *self {
+            Self::InitTokenSale {
                 token_sale_amount,
                 usd_min_amount,
                 usd_max_amount,
@@ -154,13 +190,22 @@ impl TokenSaleInstruction {
                 buf.extend_from_slice(&token_sale_price.to_le_bytes());
                 buf.extend_from_slice(&token_sale_time.to_le_bytes());
             }
-            &Self::FundTokenSale { token_sale_amount } => {
+            Self::FundTokenSale { token_sale_amount } => {
                 buf.push(1);
                 buf.extend_from_slice(&token_sale_amount.to_le_bytes());
             }
-            &Self::ExecuteTokenSale { usd_amount } => {
+            Self::ExecuteTokenSale { usd_amount } => {
                 buf.push(2);
                 buf.extend_from_slice(&usd_amount.to_le_bytes());
+            }
+            Self::PauseTokenSale {} => {
+                buf.push(3);
+            }
+            Self::ResumeTokenSale {} => {
+                buf.push(4);
+            }
+            Self::EndTokenSale {} => {
+                buf.push(5);
             }
         };
         buf

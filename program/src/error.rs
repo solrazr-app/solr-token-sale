@@ -25,9 +25,9 @@ pub enum TokenSaleError {
     /// Token Sale Amount Exceeds
     #[error("Token Sale Amount Exceeds")]
     TokenSaleAmountExceeds,
-    /// Token Sale Ended
-    #[error("Token Sale Ended")]
-    TokenSaleEnded,
+    /// Token Sale Complete
+    #[error("Token Sale Complete")]
+    TokenSaleComplete,
     /// Amount Less Than Minimum
     #[error("Amount Less Than Minimum")]
     AmountMinimum,
@@ -40,6 +40,12 @@ pub enum TokenSaleError {
     /// Amount Exceeds Your Allocation
     #[error("Amount Exceeds Your Allocation")]
     ExceedsAllocation,
+    /// Token Sale Paused
+    #[error("Token Sale Paused")]
+    TokenSalePaused,
+    /// Token Sale Ended
+    #[error("Token Sale Ended")]
+    TokenSaleEnded,
 }
 
 impl From<TokenSaleError> for ProgramError {

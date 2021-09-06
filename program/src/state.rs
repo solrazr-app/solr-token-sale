@@ -18,6 +18,8 @@ pub struct TokenSale {
     pub usd_max_amount: u64,
     pub token_sale_price: u64,
     pub token_sale_time: u64,
+    pub token_sale_paused: bool,
+    pub token_sale_ended: bool,
 }
 
 impl Sealed for TokenSale {}
@@ -29,7 +31,7 @@ impl IsInitialized for TokenSale {
 }
 
 impl Pack for TokenSale {
-    const LEN: usize = 201;
+    const LEN: usize = 203;
     fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {
         let src = array_ref![src, 0, TokenSale::LEN];
         let (
@@ -44,7 +46,9 @@ impl Pack for TokenSale {
             usd_max_amount,
             token_sale_price,
             token_sale_time,
-        ) = array_refs![src, 1, 32, 32, 32, 32, 32, 8, 8, 8, 8, 8];
+            token_sale_paused,
+            token_sale_ended,
+        ) = array_refs![src, 1, 32, 32, 32, 32, 32, 8, 8, 8, 8, 8, 1, 1];
 
         Ok(TokenSale {
             is_initialized: match is_initialized {
@@ -62,6 +66,16 @@ impl Pack for TokenSale {
             usd_max_amount: u64::from_le_bytes(*usd_max_amount),
             token_sale_price: u64::from_le_bytes(*token_sale_price),
             token_sale_time: u64::from_le_bytes(*token_sale_time),
+            token_sale_paused: match token_sale_paused {
+                [0] => false,
+                [1] => true,
+                _ => return Err(ProgramError::InvalidAccountData),
+            },
+            token_sale_ended: match token_sale_ended {
+                [0] => false,
+                [1] => true,
+                _ => return Err(ProgramError::InvalidAccountData),
+            },
         })
     }
 
@@ -79,7 +93,9 @@ impl Pack for TokenSale {
             usd_max_amount_dst,
             token_sale_price_dst,
             token_sale_time_dst,
-        ) = mut_array_refs![dst, 1, 32, 32, 32, 32, 32, 8, 8, 8, 8, 8];
+            token_sale_paused_dst,
+            token_sale_ended_dst,
+        ) = mut_array_refs![dst, 1, 32, 32, 32, 32, 32, 8, 8, 8, 8, 8, 1, 1];
 
         let TokenSale {
             is_initialized,
@@ -93,6 +109,8 @@ impl Pack for TokenSale {
             usd_max_amount,
             token_sale_price,
             token_sale_time,
+            token_sale_paused,
+            token_sale_ended,
         } = self;
 
         is_initialized_dst[0] = *is_initialized as u8;
@@ -106,5 +124,7 @@ impl Pack for TokenSale {
         *usd_max_amount_dst = usd_max_amount.to_le_bytes();
         *token_sale_price_dst = token_sale_price.to_le_bytes();
         *token_sale_time_dst = token_sale_time.to_le_bytes();
+        token_sale_paused_dst[0] = *token_sale_paused as u8;
+        token_sale_ended_dst[0] = *token_sale_ended as u8;
     }
 }
